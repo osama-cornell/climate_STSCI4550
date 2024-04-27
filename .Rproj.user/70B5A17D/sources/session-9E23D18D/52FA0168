@@ -1,0 +1,26 @@
+{
+    "id": "52FA0168",
+    "path": "~/Desktop/STSCI 4520/Final_Project/climate/R/functions.R",
+    "project_path": "R/functions.R",
+    "type": "r_source",
+    "hash": "3926085107",
+    "contents": "",
+    "dirty": false,
+    "created": 1714247137323.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "28,0",
+        "scrollLine": "10"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1714248549,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1714248549770,
+    "read_only": false,
+    "read_only_alternatives": []
+}

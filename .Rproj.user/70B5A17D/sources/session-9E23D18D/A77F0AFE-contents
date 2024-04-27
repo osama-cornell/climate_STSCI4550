@@ -1,0 +1,109 @@
+#We referenced stack overflow for help with accessing subfolders to retrieve data
+
+library(dplyr)
+# Function to recursively list all files in a directory and its subdirectories
+list_all_files <- function(path) {
+  files <- list.files(path, full.names = TRUE, recursive = TRUE)
+  files
+}
+
+# Set your main directory
+main_directory <- "~/Desktop/STSCI 4520/Final_Project/CRND0103-202404080750"
+
+# List all files in the main directory and its subdirectories
+all_files <- list_all_files(main_directory)
+
+# Filter out only text files
+text_files <- all_files[grepl(".txt", all_files)]
+
+# Import data from text files
+data_list <- list()
+for (file in text_files) {
+  data <- read.table(file, header = TRUE)
+  data_list[[file]] <- data
+}
+
+#Making a vector of all column names
+string <- "WBANNO LST_DATE CRX_VN LONGITUDE LATITUDE T_DAILY_MAX
+                   T_DAILY_MIN T_DAILY_MEAN T_DAILY_AVG P_DAILY_CALC
+                   SOLARAD_DAILY SUR_TEMP_DAILY_TYPE SUR_TEMP_DAILY_MAX
+                   SUR_TEMP_DAILY_MIN SUR_TEMP_DAILY_AVG RH_DAILY_MAX
+                   RH_DAILY_MIN RH_DAILY_AVG SOIL_MOISTURE_5_DAILY
+                   SOIL_MOISTURE_10_DAILY SOIL_MOISTURE_20_DAILY
+                   SOIL_MOISTURE_50_DAILY SOIL_MOISTURE_100_DAILY
+                   SOIL_TEMP_5_DAILY SOIL_TEMP_10_DAILY SOIL_TEMP_20_DAILY
+                   SOIL_TEMP_50_DAILY SOIL_TEMP_100_DAILY"
+
+string_processed <- gsub("\\s+", " ", string)
+column_names <- unlist(strsplit(string_processed, " "))
+
+# Renaming columns of each dataset
+data_list <- lapply(data_list, function(df) {
+  names(df) <- column_names
+  return(df)
+})
+
+#Row binding each dataframe
+weather_data <- do.call(rbind, data_list)
+
+#Changing row names to index by integers
+row.names(weather_data) <- 1:dim(weather_data)[1]
+
+#_____________________________________________________________________________
+#Now making data frame for the stations
+
+#Reading in file for weather stations
+psv <- read.table("~/Desktop/STSCI 4520/Final_Project/wbanmasterlist.psv", sep = "|",
+                  header = TRUE, stringsAsFactors = FALSE)
+#Filling in missing values
+psv <- rbind(psv,data.frame(REGION = NA, WBAN_ID = 26562, STATION_NAME =
+                              "PORT ALSWORTH 1 SW",  STATE_PROVINCE = "AK",
+                            COUNTY = NA, COUNTRY = NA, EXTENDED_NAME = NA,
+                            CALL_SIGN = NA, STATION_TYPE = NA,
+                            DATE_ASSIGNED = NA, BEGIN_DATE = NA, COMMENTS = NA,
+                            LOCATION = NA, ELEV_OTHER = NA, ELEV_GROUND = NA,
+                            ELEV_RUNWAY = NA, ELEV_BAROMETRIC = NA,
+                            ELEV_STATION = NA, ELEV_UPPER_AIR = NA))
+
+psv <- rbind(psv,data.frame(REGION = NA, WBAN_ID = 53160, STATION_NAME =
+                              "CAMP VERDE 3 N",  STATE_PROVINCE = "AZ",
+                            COUNTY = NA, COUNTRY = NA, EXTENDED_NAME = NA,
+                            CALL_SIGN = NA, STATION_TYPE = NA,
+                            DATE_ASSIGNED = NA, BEGIN_DATE = NA, COMMENTS = NA,
+                            LOCATION = NA, ELEV_OTHER = NA, ELEV_GROUND = NA,
+                            ELEV_RUNWAY = NA, ELEV_BAROMETRIC = NA,
+                            ELEV_STATION = NA, ELEV_UPPER_AIR = NA))
+
+#Subsetting stations to the ones we have in our weather dataset
+stations <- psv[  psv$WBAN_ID %in% weather_data$WBANNO,c("WBAN_ID","STATION_NAME"
+                                                          ,"STATE_PROVINCE")]
+
+#Now we're adding longitude and latitude
+stations <- left_join(stations, weather_data %>% select(WBANNO,LONGITUDE, LATITUDE),
+                      by = c("WBAN_ID" = "WBANNO"))
+
+#Getting rid of redundant rows
+stations <- unique(stations)
+
+#Changing row names to index from 1-length
+row.names(stations) <- 1:dim(stations)[1]
+
+#Filling in NA values
+stations$STATE_PROVINCE[91] <- "SA"
+
+#_____________________________________________________________________________
+#Now we're going to add state and station name to weather data
+
+weather_data <- left_join(weather_data, stations %>% select(WBAN_ID, STATION_NAME, STATE_PROVINCE),
+          by = c("WBANNO" = "WBAN_ID"))
+
+#_____________________________________________________________________________
+#Now cleaning data
+weather_data[weather_data == -9999] <- NA
+weather_data[weather_data == -99] <- NA
+weather_data[weather_data == -9] <- NA
+weather_data$LST_DATE <- as.Date(as.character(weather_data$LST_DATE), format = "%Y%m%d")
+weather_data <- weather_data %>% select(WBANNO, STATE_PROVINCE, STATION_NAME,
+                                        LST_DATE, CRX_VN, LONGITUDE, LATITUDE,
+                                        T_DAILY_MAX, T_DAILY_MIN, T_DAILY_MEAN,
+                                        T_DAILY_AVG, P_DAILY_CALC, SOLARAD_DAILY)
