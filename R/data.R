@@ -16,7 +16,7 @@
 #'     \item{T_DAILY_MAX}{Maximum air temperature, in degrees C}
 #'     \item{T_DAILY_MIN}{Minimum air temperature, in degrees C.}
 #'     \item{T_DAILY_MEAN}{Mean air temperature, in degrees C, calculated using
-#'     the typical historical approach: (T_DAILY_MAX + T_DAILY_MIN)}
+#'     the typical historical approach: (T_DAILY_MAX + T_DAILY_MIN)/2}
 #'     \item{T_DAILY_AVG}{Average air temperature, in degrees C}
 #'     \item{P_DAILY_CALC}{Total amount of precipitation, in mm.}
 #'     \item{SOLARAD_DAILY}{Total solar energy, in MJ/meter^2, calculated from the hourly average
