@@ -40,7 +40,7 @@ data("weather_data")
   #' A function to estimate the yearly cycle for a single station
   #'
   #' Returns the estimated expected temperature for each day of the year.
-  #' Uses a second order regression model
+  #' Uses a second order regression model.
   #'
   #' @param station_id WBAN ID of the weather station
   #'
@@ -62,13 +62,18 @@ data("weather_data")
           mutate(day = as.numeric(format(LST_DATE, "%j")))
       d <- df$day
       d2 <- (df$day)^2
-      lm <- lm(df$T_DAILY_AVG ~ d + d2)
+      cos12 <- cos(2*pi*d/12)
+      sin12 <- sin(2*pi*d/12)
+      lm <- lm(df$T_DAILY_AVG ~ d + d2 + cos12 + sin12)
 
-      d_pred <- sort(unique(df$day))
+      d_pred <- sort(1:365)
       d2_pred <- (d_pred)^2
-      pred_df <- as.data.frame(cbind(d_pred, d2_pred))
+      cos12_pred <- cos(2*pi*d_pred/12)
+      sin12_pred <- sin(2*pi*d_pred/12)
+      pred_df <- as.data.frame(cbind(d_pred, d2_pred,cos12_pred,sin12_pred))
       pred <- lm$coefficients[1]+lm$coefficients[2]*d_pred+
-        lm$coefficients[3]*d2_pred
+        lm$coefficients[3]*d2_pred + lm$coefficients[4]*cos12_pred +
+        lm$coefficients[5]*sin12_pred
       result <- cbind(temp = pred, day = d_pred)
       return(result)
     }
@@ -76,21 +81,28 @@ data("weather_data")
 
   #---------------------------------------------------------------------------
 
-  #' A function to estimate weather trends over time
+  #' A function to estimate look at temperature trend over time per year.
   #'
-  #' This function will use a Seasonal Auto regressive Integrated Moving Average.
+  #' Using a simple linear model to estimate trend.
   #'
-  #' @param station_id WBAN ID of the weather station
+  #' @param station_id WBAN ID for a specific station
+  #' @param type The temperature type
   #'
-  #' @return a dataframe for a specific weather station. It has the following
-  #' columns.
-  #' \itemize{
-  #'     \item \code { @context } metadata
-  #'     \item \code {day_cum} Each day of the year (1-365)
-  #'     \item \code {expected_temp} Expected daily temperature
-  #'}
+  #' @return a vector containing the trend estimate and p-value for significance.
+  #'
   #' @examples
   #' #Get data regarding station ID 3047
-  #' yearly_cycle(3047)
+  #' yearly_trend(3047,"T_DAILY_AVG")
   #'
   #' @export
+    yearly_trend <- function(station_id,type){
+      df <- weather_data %>%
+        filter(WBANNO == station_id)
+      d <- as.numeric(df$LST_DATE)
+      d2 <- (d)^2
+      cos12 <- cos(2*pi*d/12)
+      sin12 <- sin(2*pi*d/12)
+      temp <- df[[type]]
+      lm <- lm(temp ~ d + d2 + cos12 + sin12)
+      return(c(lm$coefficients[2],summary(lm)$coefficients[2,4]))
+    }
