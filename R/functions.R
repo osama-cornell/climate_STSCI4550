@@ -62,14 +62,14 @@ data("weather_data")
           mutate(day = as.numeric(format(LST_DATE, "%j")))
       d <- df$day
       d2 <- (df$day)^2
-      cos12 <- cos(2*pi*d/12)
-      sin12 <- sin(2*pi*d/12)
+      cos12 <- cos(2*pi*d/365.25)
+      sin12 <- sin(2*pi*d/365.25)
       lm <- lm(df$T_DAILY_AVG ~ d + d2 + cos12 + sin12)
 
-      d_pred <- sort(1:365)
+      d_pred <- 1:365
       d2_pred <- (d_pred)^2
-      cos12_pred <- cos(2*pi*d_pred/12)
-      sin12_pred <- sin(2*pi*d_pred/12)
+      cos12_pred <- cos(2*pi*d_pred/365.25)
+      sin12_pred <- sin(2*pi*d_pred/365.25)
       pred_df <- as.data.frame(cbind(d_pred, d2_pred,cos12_pred,sin12_pred))
       pred <- lm$coefficients[1]+lm$coefficients[2]*d_pred+
         lm$coefficients[3]*d2_pred + lm$coefficients[4]*cos12_pred +
@@ -99,10 +99,15 @@ data("weather_data")
       df <- weather_data %>%
         filter(WBANNO == station_id)
       d <- as.numeric(df$LST_DATE)
-      d2 <- (d)^2
-      cos12 <- cos(2*pi*d/12)
-      sin12 <- sin(2*pi*d/12)
+      #d2 <- (d)^2
+      cos12 <- cos(2*pi*d/365.25)
+      sin12 <- sin(2*pi*d/365.25)
+      cos6 <- cos(2*pi*d/182.625)
+      sin6 <- sin(2*pi*d/182.625)
+      cos4 <- cos(2*pi*d/121.75)
+      sin4 <- sin(2*pi*d/121.75)
       temp <- df[[type]]
-      lm <- lm(temp ~ d + d2 + cos12 + sin12)
-      return(c(lm$coefficients[2],summary(lm)$coefficients[2,4]))
+      lm <- lm(temp ~ d + cos12 + sin12 + cos6 + sin6 + cos4 + sin4)
+      return(c(slope = lm$coefficients[2],p_value =
+                 summary(lm)$coefficients[2,4]))
     }
