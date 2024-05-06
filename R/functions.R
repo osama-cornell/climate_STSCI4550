@@ -2,6 +2,10 @@ library(dplyr)
 library(maps)
 library(fields)
 library(sf)
+library(sp)
+library(ggplot2)
+library(GpGp)
+library(ggplot2)
 data("weather_data")
 
 #' A function for extracting the time series for a specific station by station id.
@@ -99,7 +103,6 @@ data("weather_data")
       df <- weather_data %>%
         filter(WBANNO == station_id)
       d <- as.numeric(df$LST_DATE)
-      #d2 <- (d)^2
       cos12 <- cos(2*pi*d/365.25)
       sin12 <- sin(2*pi*d/365.25)
       cos6 <- cos(2*pi*d/182.625)
@@ -111,3 +114,93 @@ data("weather_data")
       return(c(slope = lm$coefficients[2],p_value =
                  summary(lm)$coefficients[2,4]))
     }
+
+  #---------------------------------------------------------------------------
+
+  #' Insert Here
+  #'
+  #' Insert Here
+  #'
+  #' @param resolution Resolution of graphic, default is 0.1
+  #'
+  #' @return Insert Here
+  #'
+  #' @examples
+  #' Insert Here
+  #'
+  #' @export
+  grid_points <- function(resolution = 0.1) {
+    map <- map_data("usa")
+    map <- filter(map, region == "main")
+    x.points <- seq(min(map$long), max(map$long), by = resolution)
+    y.points <- seq(min(map$lat), max(map$lat), by = resolution)
+    grid <- expand.grid(x.points,y.points)
+
+    inside <- point.in.polygon(grid$Var1, grid$Var2, map$long, map$lat)
+    inside.logical <- ifelse(inside, TRUE, FALSE)
+    return(grid[inside.logical, ])
+  }
+
+  #---------------------------------------------------------------------------
+
+  #' Insert Here
+  #'
+  #' Insert Here
+  #'
+  #' @param name Insert Here
+  #'
+  #' @return Insert Here
+  #'
+  #' @examples
+  #' Insert Here
+  #'
+  #' @export
+  station_grid_points <- function(grid_points, param = "T_DAILY_AVG") {
+    full <- weather_data %>%
+      filter(as.integer(format(LST_DATE, "%Y")) == 2023) %>%
+      select(param, LONGITUDE, LATITUDE)
+    clean_df <- na.omit(full)
+    df <- as.data.frame(clean_df)
+
+
+    model <- fit_model(y = df[[param]],
+                             locs = df[,c("LONGITUDE", "LATITUDE")],
+                             covfun_name = "matern_sphere",silent = TRUE,
+                       max_iter = 25)
+    X <- as.data.frame(rep(1,dim(grid_points)[1]))
+    preds <- predictions(fit = model,locs_pred = grid_points, X_pred = X)
+    result <- cbind(grid_points,preds)
+    return(result)
+  }
+
+  #---------------------------------------------------------------------------
+
+  #' Insert Here
+  #'
+  #' Insert Here
+  #'
+  #' @param name Insert Here
+  #'
+  #' @return Insert Here
+  #'
+  #' @examples
+  #' Insert Here
+  #'
+  #' @export
+    plot_interpolations <- function(df){
+      ggplot(df, aes(x = Var1, y = Var2, color = preds)) +
+        geom_point() +
+        scale_color_gradient(low = "lightblue", high = "darkred") +
+        labs(x = "Longitude", y = "Latitude",
+             color = "Average Daily Temperature (Celsius)")
+    }
+
+
+
+
+
+
+
+
+
+

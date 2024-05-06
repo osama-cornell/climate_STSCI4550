@@ -94,7 +94,7 @@ station_grid_points <- function(weather_data, resolution = 0.1,
 
 
 # A function for plotting the gridded interpolations on a map.
-plot_interpolations <- function(interp_result, grid_points, variable_name) {
+plot_interpolations2 <- function(interp_result, grid_points, variable_name) {
   # Convert interpolated results to an sf object
   interp_sf <- st_as_sf(interp_result$z, coords = c("x", "y"))
 
@@ -113,7 +113,11 @@ plot_interpolations <- function(interp_result, grid_points, variable_name) {
   print(p)
 }
 
-
+inter_plot <- function(inter){
+  ggplot(df, aes(x = df[, 1], y = df[, 2],
+  color = df[, 3])) + geom_point(
+  x = long, y = lat, color = inter)
+}
 
 
 
