@@ -53,7 +53,7 @@ data("weather_data")
   #' \itemize{
   #'     \item \code { @context } metadata
   #'     \item \code {day} Each day of the year (1-365)
-  #'     \item \code {expected_temp} Expected daily temperature
+  #'     \item \code {temp} Expected daily temperature
   #'}
   #' @examples
   #' #Get data regarding station ID 3047
@@ -99,7 +99,7 @@ data("weather_data")
   #' yearly_trend(3047,"T_DAILY_AVG")
   #'
   #' @export
-    yearly_trend <- function(station_id,type){
+    yearly_trend <- function(station_id,type = "T_DAILY_AVG"){
       df <- weather_data %>%
         filter(WBANNO == station_id)
       d <- as.numeric(df$LST_DATE)
@@ -155,21 +155,21 @@ data("weather_data")
   #' Insert Here
   #'
   #' @export
-  station_grid_points <- function(grid_points, param = "T_DAILY_AVG") {
-    full <- weather_data %>%
-      filter(as.integer(format(LST_DATE, "%Y")) == 2023) %>%
+  station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
+    full <- df %>%
       select(param, LONGITUDE, LATITUDE)
     clean_df <- na.omit(full)
     df <- as.data.frame(clean_df)
 
 
-    model <- fit_model(y = df[[param]],
-                             locs = df[,c("LONGITUDE", "LATITUDE")],
-                             covfun_name = "matern_sphere",silent = TRUE,
+    model <- fit_model(y = df[[param]],locs = df[,c("LONGITUDE", "LATITUDE")],
+                       covfun_name = "matern_sphere",silent = TRUE,
                        max_iter = 25)
+
     X <- as.data.frame(rep(1,dim(grid_points)[1]))
     preds <- predictions(fit = model,locs_pred = grid_points, X_pred = X)
-    result <- cbind(grid_points,preds)
+    names(grid_points) <- c("LONGITUDE","LATITUDE")
+    result <- cbind(grid_points,AVERAGE = preds)
     return(result)
   }
 
@@ -188,19 +188,10 @@ data("weather_data")
   #'
   #' @export
     plot_interpolations <- function(df){
-      ggplot(df, aes(x = Var1, y = Var2, color = preds)) +
+      ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = AVERAGE)) +
         geom_point() +
         scale_color_gradient(low = "lightblue", high = "darkred") +
         labs(x = "Longitude", y = "Latitude",
              color = "Average Daily Temperature (Celsius)")
     }
-
-
-
-
-
-
-
-
-
 

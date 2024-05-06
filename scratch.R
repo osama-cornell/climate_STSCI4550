@@ -20,4 +20,4 @@ grid_points(2)
 station_grid_points(grid_points(2))
 
 #plots
-plot_interpolations()
+plot_interpolations(station_grid_points(grid_points(2)))
