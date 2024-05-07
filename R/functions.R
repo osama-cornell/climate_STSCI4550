@@ -216,11 +216,10 @@ data("weather_data")
   #'     \item{.}{Variable for color}
   #'     }
   #' @param col1 Variable for color
-  #' @param type type of plot needed. 1 is for continuous color variables, 2 is
-  #' for categorical color variables, and 3 is for continuous variables the are
-  #' very small. (Optional)
-  #' @param cat_color Vector of colors wanted (Optional)
+  #' @param type type of plot needed. 1 is for continuous color variables,
+  #'  and 2 is for continuous variables the are very small. (Optional)
   #' @param col2 Variable for size (Optional)
+  #' @param Title Title of plot
   #'
   #' @return A plot of spatial data
   #'
@@ -229,33 +228,23 @@ data("weather_data")
   #' plot_interpolations(df = preds, col1 = preds$AVERAGE)
   #'
   #' @export
-    plot_interpolations <- function(df,col1,type = 1, cat_color = c(),
-                                    col2 = NULL){
+    plot_interpolations <- function(df,col1,type = 1,col2 = NULL, Title = NULL){
       #Plot of continuous variable
       if(type == 1){
         ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
           geom_point() +
           scale_color_gradient(low = "lightblue", high = "darkred") +
           labs(x = "Longitude", y = "Latitude",
-               color = "Temperature (Celsius)")
-      }
-
-      #Plot of categorical variable
-      else if(type == 2){
-        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
-          geom_point() +
-          scale_color_manual(values = cat_color) +
-          labs(x = "Longitude", y = "Latitude",
-               color = "Month")
+               color = Title)
       }
 
       #Plot of granular continuous variable (very small values)
-      else if(type == 3){
+      else if(type == 2){
         ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2)) +
           geom_point() +
-          scale_color_gradientn(colors = cat_color, limits = c(-0.001,0.001)) +
+          scale_color_gradientn(colors = rainbow(10)) +
           labs(x = "Longitude", y = "Latitude",
-               color = "Trend")
+               color = Title)
       }
     }
 
