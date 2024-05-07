@@ -79,7 +79,7 @@ data("weather_data")
         lm$coefficients[3]*d2_pred + lm$coefficients[4]*cos12_pred +
         lm$coefficients[5]*sin12_pred
       result <- cbind(temp = pred, day = d_pred)
-      return(result)
+      return(as.data.frame(result))
     }
 
 
@@ -92,7 +92,7 @@ data("weather_data")
   #' @param station_id WBAN ID for a specific station
   #' @param type The temperature type
   #'
-  #' @return a vector containing the trend estimate and p-value for significance.
+  #' @return a vector containing the trend estimate, p-value, and standard error.
   #'
   #' @examples
   #' #Get data regarding station ID 3047
@@ -112,7 +112,8 @@ data("weather_data")
       temp <- df[[type]]
       lm <- lm(temp ~ d + cos12 + sin12 + cos6 + sin6 + cos4 + sin4)
       return(c(slope = lm$coefficients[2],p_value =
-                 summary(lm)$coefficients[2,4]))
+                 summary(lm)$coefficients[2,4],
+             se = summary(lm)$coefficients[2,2]))
     }
 
   #---------------------------------------------------------------------------
