@@ -5,7 +5,6 @@ library(sf)
 library(sp)
 library(ggplot2)
 library(GpGp)
-library(ggplot2)
 data("weather_data")
 
 #' A function for extracting the time series for a specific station by station id.
@@ -48,28 +47,29 @@ data("weather_data")
   #'
   #' @param station_id WBAN ID of the weather station
   #'
-  #' @return a dataframe for a specific weather station. It has the following
-  #' columns.
-  #' \itemize{
-  #'     \item \code { @context } metadata
-  #'     \item \code {day} Each day of the year (1-365)
-  #'     \item \code {temp} Expected daily temperature
-  #'}
+  #' @return a dataframe with the following columns:
+  #' \describe{
+  #'     \item{day}{Day of the year (1-365)}
+  #'     \item{temp}{Estimate temperature for the day}
+  #'     }
   #' @examples
   #' #Get data regarding station ID 3047
   #' yearly_cycle(3047)
   #'
   #' @export
     yearly_cycle <- function(station_id){
+      #Get day of year
       df <- weather_data %>%
         filter(WBANNO == station_id) %>%
           mutate(day = as.numeric(format(LST_DATE, "%j")))
+      #Fit regression model
       d <- df$day
       d2 <- (df$day)^2
       cos12 <- cos(2*pi*d/365.25)
       sin12 <- sin(2*pi*d/365.25)
       lm <- lm(df$T_DAILY_AVG ~ d + d2 + cos12 + sin12)
 
+      #Make predictions
       d_pred <- 1:365
       d2_pred <- (d_pred)^2
       cos12_pred <- cos(2*pi*d_pred/365.25)
@@ -96,12 +96,13 @@ data("weather_data")
   #'
   #' @examples
   #' #Get data regarding station ID 3047
-  #' yearly_trend(3047,"T_DAILY_AVG")
+  #' yearly_trend(3047)
   #'
   #' @export
     yearly_trend <- function(station_id,type = "T_DAILY_AVG"){
       df <- weather_data %>%
         filter(WBANNO == station_id)
+      #Fit regression model
       d <- as.numeric(df$LST_DATE)
       cos12 <- cos(2*pi*d/365.25)
       sin12 <- sin(2*pi*d/365.25)
@@ -118,25 +119,34 @@ data("weather_data")
 
   #---------------------------------------------------------------------------
 
-  #' Insert Here
+  #' Get Grid of Continuous USA
   #'
-  #' Insert Here
+  #' This function makes a map of the USA using grid points. All grid points
+  #' fall within the continuous USA
   #'
   #' @param resolution Resolution of graphic, default is 0.1
   #'
-  #' @return Insert Here
+  #' @return dataframe with the following columns:
+  #' \describe{
+  #'     \item{Var1}{Longitude}
+  #'     \item{Var2}{Latitude}
+  #'     }
   #'
   #' @examples
-  #' Insert Here
+  #' #Make grid points with default resolution
+  #' grid_points()
   #'
   #' @export
   grid_points <- function(resolution = 0.1) {
+    #Get map of continuous
     map <- map_data("usa")
     map <- filter(map, region == "main")
+    #Make points depending on resolution
     x.points <- seq(min(map$long), max(map$long), by = resolution)
     y.points <- seq(min(map$lat), max(map$lat), by = resolution)
+    #Create grid
     grid <- expand.grid(x.points,y.points)
-
+    #Make it inside polygon
     inside <- point.in.polygon(grid$Var1, grid$Var2, map$long, map$lat)
     inside.logical <- ifelse(inside, TRUE, FALSE)
     return(grid[inside.logical, ])
@@ -144,29 +154,48 @@ data("weather_data")
 
   #---------------------------------------------------------------------------
 
-  #' Insert Here
+  #' Interpolates values given grid points
   #'
-  #' Insert Here
+  #' This function is predicts a target variable, given grid points using a
+  #' spatial model
   #'
-  #' @param name Insert Here
+  #' @param df dataframe with the following components
+  #' \describe{
+  #'     \item{LONGITUDE}{Longitude for training the model}
+  #'     \item{LATITUDE}{Latitude for training the model}
+  #'     \item{.}{A target variable of choice}
+  #'     }
+  #' @param gird_points dataframe with the following components:
+  #' \describe{
+  #'     \item{.}{Longitude for predictions}
+  #'     \item{.}{Latitude for predictions}
+  #'     }
+  #' @param param Optional parameter for the target variable
   #'
-  #' @return Insert Here
+  #' @return a dataframe with the following components:
+  #' \describe{
+  #'     \item{LONGITUDE}{Longitude from grid_points}
+  #'     \item{LATITUDE}{Latitude from grid_points}
+  #'     \item{AVERAGE}{Predictions from the model}
+  #'     }
   #'
   #' @examples
-  #' Insert Here
+  #' #Using default target
+  #' station_grid_points(df,grid)
   #'
   #' @export
   station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
+    #Select specific columns and clean data
     full <- df %>%
       select(param, LONGITUDE, LATITUDE)
     clean_df <- na.omit(full)
     df <- as.data.frame(clean_df)
 
-
+    #Fit spatial model
     model <- fit_model(y = df[[param]],locs = df[,c("LONGITUDE", "LATITUDE")],
                        covfun_name = "matern_sphere",silent = TRUE,
                        max_iter = 25)
-
+    #Make predictions
     X <- as.data.frame(rep(1,dim(grid_points)[1]))
     preds <- predictions(fit = model,locs_pred = grid_points, X_pred = X)
     names(grid_points) <- c("LONGITUDE","LATITUDE")
@@ -176,23 +205,57 @@ data("weather_data")
 
   #---------------------------------------------------------------------------
 
-  #' Insert Here
+  #' Plot interpolation
   #'
-  #' Insert Here
+  #' This function uses ggplot2 to make plots of spatial data
   #'
-  #' @param name Insert Here
+  #' @param df dataframe with following components
+  #' \describe{
+  #'     \item{LONGITUDE}{Longitude from grid_points}
+  #'     \item{LATITUDE}{Latitude from grid_points}
+  #'     \item{.}{Variable for color}
+  #'     }
+  #' @param col1 Variable for color
+  #' @param type type of plot needed. 1 is for continuous color variables, 2 is
+  #' for categorical color variables, and 3 is for continuous variables the are
+  #' very small. (Optional)
+  #' @param cat_color Vector of colors wanted (Optional)
+  #' @param col2 Variable for size (Optional)
   #'
-  #' @return Insert Here
+  #' @return A plot of spatial data
   #'
   #' @examples
-  #' Insert Here
+  #' #Type 1, default colors, no size
+  #' plot_interpolations(df = preds, col1 = preds$AVERAGE)
   #'
   #' @export
-    plot_interpolations <- function(df){
-      ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = AVERAGE)) +
-        geom_point() +
-        scale_color_gradient(low = "lightblue", high = "darkred") +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Average Daily Temperature (Celsius)")
+    plot_interpolations <- function(df,col1,type = 1, cat_color = c(),
+                                    col2 = NULL){
+      #Plot of continuous variable
+      if(type == 1){
+        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
+          geom_point() +
+          scale_color_gradient(low = "lightblue", high = "darkred") +
+          labs(x = "Longitude", y = "Latitude",
+               color = "Temperature (Celsius)")
+      }
+
+      #Plot of categorical variable
+      else if(type == 2){
+        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
+          geom_point() +
+          scale_color_manual(values = cat_color) +
+          labs(x = "Longitude", y = "Latitude",
+               color = "Month")
+      }
+
+      #Plot of granular continuous variable (very small values)
+      else if(type == 3){
+        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2)) +
+          geom_point() +
+          scale_color_gradientn(colors = cat_color, limits = c(-0.001,0.001)) +
+          labs(x = "Longitude", y = "Latitude",
+               color = "Trend")
+      }
     }
 

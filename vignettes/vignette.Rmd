@@ -21,32 +21,45 @@ library(climate)
 
 ```{r}
 #Problem 1
-stations <- unique(weather_data$WBANNO)
+
+#Filtering for continuous USA and getting unqiue station ID
+new_df <- weather_data %>% filter(LONGITUDE > -130) %>% filter(LONGITUDE < 0)
+stations <- unique(new_df$WBANNO)
+
+#Using time series function from climate package and first station and making it
+#a dataframe
 df <- time_series(station_id = stations[1], start = "2024-03-01", 
                     end = "2024-03-30")
 
+#appending all other time series data for other stations to the dataframe above
 for(station in stations[2:length(stations)]){
   ts <- time_series(station_id = station, start = "2024-03-01", 
                     end = "2024-03-30")
   df <- rbind(df,ts)
   
 }
+
+#Getting mean average temperature and plotting
 average_df <- df %>% group_by(WBANNO) %>% 
   summarize(LONGITUDE = unique(LONGITUDE), LATITUDE = unique(LATITUDE), 
             AVERAGE = mean(T_DAILY_AVG, na.rm = TRUE)) %>% select(-WBANNO)
 average_df <- na.omit(average_df)
-plot_interpolations(average_df)
+plot_interpolations(df = average_df,col1 = average_df$AVERAGE)
 
 ```
 
 ```{r}
 #Problem 2
+
+#Getting grid of contingous USA, interpolating and plotting
 grid <- grid_points(0.75)
 preds <- station_grid_points(df,grid)
-plot_interpolations(df,preds)
+plot_interpolations(df = preds, col1 = preds$AVERAGE)
 ```
 ```{r}
 #Problem 3
+
+#Making a dataframe of the estimated min and max days using yearly cycle function
 df <- data.frame(WBANNO = c(), LONGITUDE = c(), LATITUDE = c(), min = c(), 
                  max = c() , min_day = c(), max_day = c())
 for(station in stations){
@@ -65,6 +78,7 @@ for(station in stations){
 df["cat_min"] <- rep(NA,dim(df)[1])
 df["cat_max"] <- rep(NA, dim(df)[1])
 
+#This function categorizes each row into a month from 1-12
 cat_day <- function(df,col1,col2){
   for(i in 1:dim(df)[1]){
   if(df[i,col1] <= 31){
@@ -128,18 +142,11 @@ category_colors <- c("red", "blue", "green", "orange", "purple", "pink",
                      "black","gray","brown","yellow",
                      "darkblue","cyan","magenta")
 
-ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = cat_min)) +
-        geom_point() +
-        scale_color_manual(values = category_colors) +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Month of Year")
+plot_interpolations(df = df, col1 = df$cat_min, type = 2, cat_color = category_colors)
 
-ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = cat_max)) +
-        geom_point() +
-        scale_color_manual(values = category_colors) +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Month of Year")   
+plot_interpolations(df = df, col1 = df$cat_max, type = 2, cat_color = category_colors)
 
+#Interpolating minimum day using spatial model 
 grid <- grid_points(0.75)
 preds <- station_grid_points(df,grid,"min_day")
 preds["cat_min"] <- rep(NA,dim(preds)[1])
@@ -147,41 +154,39 @@ preds$AVERAGE <- round(preds$AVERAGE)
 preds <- cat_day(preds,"AVERAGE","cat_min")
 preds$cat_min <- factor(preds$cat_min)
 
-ggplot(preds,aes(x = LONGITUDE, y = LATITUDE, color = cat_min)) +
-        geom_point() +
-        scale_color_manual(values = category_colors) +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Month of Year")   
+plot_interpolations(df = preds, col1 = preds$cat_min, type = 2, cat_color = category_colors)
 
 grid <- grid_points(0.75)
 preds <- station_grid_points(df,grid,"max_day")
 preds["cat_max"] <- rep(NA,dim(preds)[1])
 preds$AVERAGE <- round(preds$AVERAGE)
 preds <- cat_day(preds,"AVERAGE","cat_max")
-preds$cat_min <- factor(preds$cat_max)
+preds$cat_max <- factor(preds$cat_max)
 
-ggplot(preds,aes(x = LONGITUDE, y = LATITUDE, color = cat_min)) +
-        geom_point() +
-        scale_color_manual(values = category_colors) +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Month of Year")   
+plot_interpolations(df = preds, col1 = preds$cat_max, type = 2, cat_color = category_colors)
 ```
-We used a regression model with the form 
-Temperature = intercept + coefficent x day + coefficent x day^2 + 
-coefficent x cos(2 x pi x day/365.25) coefficent x sin(2 x pi x day/365.25).
-Our assumption about th model is that the day of the year as a non linear 
-relationship to the temperature. Also the error term has mean 0, has some varaince and are IID.
+**Problem 3:** We used a regression model with the form 
+Temperature = intercept + coefficient x day + coefficient x day^2 + 
+coefficient x cos(2 x pi x day/365.25) coefficient x sin(2 x pi x day/365.25).
+Our assumption about the model is that the day of the year has a non linear 
+relationship to the temperature and the yearly trend is the same every year. 
+Also the error term has mean 0, has some variance and are IID.
 
 ```{r}
 #Problem #4
+
+#Getting 10 stations
 station_cycle <- stations[c(1,20,30,50,70,90,15,100,200,230)]
 df <- data.frame(matrix(ncol = length(station_cycle), nrow = 365))
 colnames(df) <- station_cycle
+
+#Estimating yearly cycle for each station
 for(station in station_cycle){
   new_df <- 
   df[,as.character(station)] <- yearly_cycle(station)$temp
 }
 
+#Plotting yearly cycles
 plot(1:365,df[,1],type = "l",col = 1, ylim = c(-10,30), 
      xlab = "Day", ylab = "Temperature")
 
@@ -196,6 +201,7 @@ legend("topright", legend = colnames(df), col = 1:10, lty = 1, cex = 0.8)
 #Problem 5
 df <- data.frame(station = c(),trend = c(),p_value = c(), se = c())
 
+#Making a data frame for trend estimates of each station
 for(station in stations){
   new_df <- weather_data %>% filter(WBANNO == station)
   LONGITUDE <- unique(new_df$LONGITUDE)
@@ -205,11 +211,25 @@ for(station in stations){
 }
 colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
 
-ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = trend)) +
-        geom_point() +
-        scale_color_gradient(low = "lightblue", high = "darkred",
-                             limit = range(df$trend)) +
-        labs(x = "Longitude", y = "Latitude",
-             color = "Month of Year")   
-```
+#Plotting trend estimates
+plot_interpolations(df = df, col1 = df$trend, type = 3, cat_color = rainbow(10),size = df$pvalue)
 
+#Interpolating and plotting trend estimates
+new_df <- df %>% filter(pvalue <= 0.05)
+grid <- grid_points(resolution = 0.75)
+preds <- station_grid_points(new_df,grid, param = "trend")
+
+plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 3, cat_color = rainbow(10))
+```
+**Problem 5:** We used a regression model of the form:
+Temperature = intercept + coefficient1 x day + coefficient x cos(2*pi*day/365.25) + coefficient x sin(2*pi*day/365.25) + coefficient x cos(2*pi*day/182.625) +
+coefficient x sin(2*pi*day/182.625) + coefficient x cos(2*pi*day/121.75) + 
+coefficient x sin(2*pi*day/121.75). We used the trigonometric functions to 
+account for the cycle, and extracted coefficient1 for the estimated trend.
+
+
+**Problem 6:** According to the U.S. Environmental Protection Agency, our trend
+interpolations seem to be correct accounting for scale since their give
+their trend estimates in Fahrenheit, and our measurements are in Celsius. 
+Here's the link:
+https://www.epa.gov/climate-indicators/climate-change-indicators-us-and-global-temperature
