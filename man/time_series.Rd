@@ -8,6 +8,10 @@ time_series(station_id, start_date = NULL, end_date = NULL)
 }
 \arguments{
 \item{station_id}{WBAN ID of the weather station}
+
+\item{start_date}{Start date of time series}
+
+\item{end_date}{End date of time series}
 }
 \value{
 a dataframe for a specific weather station. For information about
