@@ -238,11 +238,14 @@ station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
 #' LATITUDE <- unique(new_df$LATITUDE)
 #' df <- rbind(df,c(station,LONGITUDE,LATITUDE,
 #'                  yearly_trend(station_id = station)))
-#'}
-#'colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
-#'#Plotting trend estimates
-#'plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
-#'Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
+#' }
+#' colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
+#' #Plotting trend estimates
+#' plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
+#' Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
+#' new_df <- weather_data %>% filter(LONGITUDE > -130) %>% filter(LONGITUDE < 0)
+#' stations <- unique(new_df$WBANNO)
+#'
 #'
 #' @export
 plot_interpolations <- function(df,col1,type = 1,col2 = NULL,

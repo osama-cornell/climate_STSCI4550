@@ -10,7 +10,8 @@ plot_interpolations(
   type = 1,
   col2 = NULL,
   Title = NULL,
-  size_name = NULL
+  size_name = NULL,
+  Big_Title = NULL
 )
 }
 \arguments{
@@ -23,14 +24,17 @@ plot_interpolations(
 
 \item{col1}{Variable for color}
 
-\item{type}{type of plot needed. 1 is for continuous color variables,
-and 2 is for continuous variables the are very small. (Optional)}
+\item{type}{type of plot needed. 1 is for continuous color variables with no
+background, and 2 is for continuous variables the are very small. Type 3
+has a background(Optional)}
 
 \item{col2}{Variable for size (Optional)}
 
-\item{Title}{Title of plot}
+\item{Title}{Title of color}
 
 \item{size_name}{Title size on the legend}
+
+\item{Big_Title}{Title of Plot}
 }
 \value{
 A plot of spatial data
@@ -39,7 +43,18 @@ A plot of spatial data
 This function uses ggplot2 to make plots of spatial data
 }
 \examples{
-#Type 1, default colors, no size
-plot_interpolations(df = preds, col1 = preds$AVERAGE)
+df <- data.frame(station = c(),trend = c(),p_value = c(), se = c())
+#Making a data frame for trend estimates of each station
+for(station in stations){
+new_df <- weather_data \%>\% filter(WBANNO == station)
+LONGITUDE <- unique(new_df$LONGITUDE)
+LATITUDE <- unique(new_df$LATITUDE)
+df <- rbind(df,c(station,LONGITUDE,LATITUDE,
+                 yearly_trend(station_id = station)))
+}
+colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
+#Plotting trend estimates
+plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
+Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
 
 }

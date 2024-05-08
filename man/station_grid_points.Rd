@@ -14,13 +14,13 @@ station_grid_points(df, grid_points, param = "T_DAILY_AVG")
     \item{.}{A target variable of choice}
     }}
 
-\item{param}{Optional parameter for the target variable}
-
-\item{gird_points}{dataframe with the following components:
+\item{grid_points}{dataframe with the following components:
 \describe{
     \item{.}{Longitude for predictions}
     \item{.}{Latitude for predictions}
     }}
+
+\item{param}{Optional parameter for the target variable}
 }
 \value{
 a dataframe with the following components:
@@ -36,6 +36,8 @@ spatial model
 }
 \examples{
 #Using default target
+df <- weather_data[1:10000,]
+grid <- grid_points(0.75)
 station_grid_points(df,grid)
 
 }
