@@ -189,7 +189,7 @@ grid_points <- function(resolution = 0.1) {
 station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
   #Select specific columns and clean data
   full <- df %>%
-    select(param, LONGITUDE, LATITUDE)
+    select(all_of(param), LONGITUDE, LATITUDE)
   clean_df <- na.omit(full)
   df <- as.data.frame(clean_df)
   colnames(grid_points) <- c("LONGITUDE", "LATITUDE")
@@ -219,35 +219,67 @@ station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
 #'     \item{.}{Variable for color}
 #'     }
 #' @param col1 Variable for color
-#' @param type type of plot needed. 1 is for continuous color variables,
-#'  and 2 is for continuous variables the are very small. (Optional)
+#' @param type type of plot needed. 1 is for continuous color variables with no
+#' background, and 2 is for continuous variables the are very small. Type 3
+#' has a background(Optional)
 #' @param col2 Variable for size (Optional)
-#' @param Title Title of plot
+#' @param Title Title of color
 #' @param size_name Title size on the legend
+#' @param Big_Title Title of Plot
 #'
 #' @return A plot of spatial data
 #'
 #' @examples
-#' plot_interpolations(df = preds, col1 = preds$AVERAGE)
+#' df <- data.frame(station = c(),trend = c(),p_value = c(), se = c())
+#' #Making a data frame for trend estimates of each station
+#' for(station in stations){
+#' new_df <- weather_data %>% filter(WBANNO == station)
+#' LONGITUDE <- unique(new_df$LONGITUDE)
+#' LATITUDE <- unique(new_df$LATITUDE)
+#' df <- rbind(df,c(station,LONGITUDE,LATITUDE,
+#'                  yearly_trend(station_id = station)))
+#'}
+#'colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
+#'#Plotting trend estimates
+#'plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
+#'Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
 #'
 #' @export
 plot_interpolations <- function(df,col1,type = 1,col2 = NULL,
-                                Title = NULL, size_name = NULL){
-  #Plot of continuous variable
+                                Title = NULL, size_name = NULL,
+                                Big_Title = NULL){
+  #Plot of continuous variable, simple with no background,
+  #used for interpolations
   if(type == 1){
     ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
       geom_point() +
       scale_color_gradient(low = "lightblue", high = "darkred") +
-      labs(x = "Longitude", y = "Latitude",
+      labs(title = Big_Title,x = "Longitude", y = "Latitude",
            color = Title)
   }
 
   #Plot of granular continuous variable (very small values)
   else if(type == 2){
-    ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2,)) +
+    ggplot2::ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2,)) +
       geom_point() +
       scale_color_gradientn(colors = rainbow(10)) +
-      labs(x = "Longitude", y = "Latitude",
+      labs(title = Big_Title, x = "Longitude", y = "Latitude",
            color = Title, size = size_name)
+  }
+
+  #Plot of continuous variable, simple with background,
+  #used individuals stations
+  else if(type == 3){
+  usa_map <- map_data("usa")
+  ggplot2::ggplot() +
+    geom_polygon(data = usa_map, aes(x = long, y = lat, group = group),
+                 fill = "gray", color = "gray", linewidth = 0.25) +
+    geom_point(data = df, aes(x = LONGITUDE, y = LATITUDE,
+                                      color = col1), size = 3) +
+    scale_color_gradient(low = "#ffeda0", high = "#f03b20") +
+    labs(title = Big_Title,
+         x = "Longitude", y = "Latitude",
+         color = Title) +
+    theme_minimal()
   }
 }

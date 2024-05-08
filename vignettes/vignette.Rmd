@@ -51,7 +51,8 @@ average_df <- df %>% group_by(WBANNO) %>%
   summarize(LONGITUDE = unique(LONGITUDE), LATITUDE = unique(LATITUDE), 
             AVERAGE = mean(T_DAILY_AVG, na.rm = TRUE)) %>% select(-WBANNO)
 average_df <- na.omit(average_df)
-plot_interpolations(df = average_df,col1 = average_df$AVERAGE, 
+plot_interpolations(df = average_df,col1 = average_df$AVERAGE, type = 3,
+                    Big_Title = "Average Temperature in March 2024",
                     Title = "Temperature (Celsius)")
 
 ```
@@ -63,6 +64,7 @@ plot_interpolations(df = average_df,col1 = average_df$AVERAGE,
 grid <- grid_points(0.75)
 preds <- station_grid_points(df,grid)
 plot_interpolations(df = preds, col1 = preds$AVERAGE, 
+                  Big_Title = "Average Temperature in March 2024 Interpolations",
                     Title = "Temperature (Celsius)")
 ```
 ```{r}
@@ -85,9 +87,11 @@ for(station in stations){
 }
 
 
-plot_interpolations(df = df, col1 = df$min_day, type = 2, Title = "Day")
+plot_interpolations(df = df, col1 = df$min_day, Title = "Day",
+                    Big_Title = "Coldest Day of Year",type = 3)
 
-plot_interpolations(df = df, col1 = df$max_day, type = 2, Title = "Day")
+plot_interpolations(df = df, col1 = df$max_day, type = 3, Title = "Day",
+                    Big_Title = "Hottest Day of Year")
 
 #Interpolating minimum day using spatial model 
 grid <- grid_points(0.75)
@@ -98,6 +102,7 @@ preds <- station_grid_points(df,grid,"min_day_loop")
 preds$AVERAGE <- round(preds$AVERAGE)
 
 plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 2, 
+                    Big_Title = "Coldest Day of Year Interpolation",
                     Title = "Day (0 is Dec. 31)")
 
  #Interpolating maximum day using spatial model 
@@ -105,7 +110,9 @@ grid <- grid_points(0.75)
 preds <- station_grid_points(df,grid,"max_day")
 preds$AVERAGE <- round(preds$AVERAGE)
 
-plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 2, Title = "Day")
+plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 2, 
+                    Title = "Day",
+                    Big_Title = "Hottest Day of Year Interpolation")
 ```
 **Problem 3:** We used a regression model with the form 
 Temperature = intercept + coefficient x day + coefficient x day^2 + 
@@ -129,7 +136,7 @@ for(station in station_cycle){
 
 #Plotting yearly cycles
 plot(1:365,df[,1],type = "l",col = 1, ylim = c(-10,30), 
-     xlab = "Day", ylab = "Temperature")
+     xlab = "Day", ylab = "Temperature", main = "Yearly Cycle")
 
 for(i in 2:10){
   points(1:365,df[,i], type = "l", col = i)
@@ -153,14 +160,15 @@ for(station in stations){
 colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
 
 #Plotting trend estimates
-plot_interpolations(df = df, col1 = df$trend, type = 2,col2 = df$pvalue, Title = "Trend", size_name = "p_value")
+plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue, Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
 
 #Interpolating and plotting trend estimates
 new_df <- df %>% filter(pvalue <= 0.05)
 grid <- grid_points(resolution = 0.75)
 preds <- station_grid_points(new_df,grid, param = "trend")
 
-plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 2, Title = "Trend")
+plot_interpolations(df = preds, col1 = preds$AVERAGE, type = 2, 
+                    Title = "Trend",Big_Title = "Temperature Trend")
 ```
 **Problem 5:** We used a regression model of the form:
 Temperature = intercept + **coefficient1** x day + coefficient x cos(2*pi*day/365.25) + coefficient x sin(2*pi*day/365.25) + coefficient x cos(2*pi*day/182.625) +
