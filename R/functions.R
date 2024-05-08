@@ -187,7 +187,7 @@ data("weather_data")
   station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
     #Select specific columns and clean data
     full <- df %>%
-      select(param, LONGITUDE, LATITUDE)
+      select(all_of(param), LONGITUDE, LATITUDE)
     clean_df <- na.omit(full)
     df <- as.data.frame(clean_df)
 
@@ -220,6 +220,7 @@ data("weather_data")
   #'  and 2 is for continuous variables the are very small. (Optional)
   #' @param col2 Variable for size (Optional)
   #' @param Title Title of plot
+  #' @param size_name Title size on the legend
   #'
   #' @return A plot of spatial data
   #'
@@ -228,7 +229,8 @@ data("weather_data")
   #' plot_interpolations(df = preds, col1 = preds$AVERAGE)
   #'
   #' @export
-    plot_interpolations <- function(df,col1,type = 1,col2 = NULL, Title = NULL){
+    plot_interpolations <- function(df,col1,type = 1,col2 = NULL,
+                                    Title = NULL, size_name = NULL){
       #Plot of continuous variable
       if(type == 1){
         ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
@@ -240,11 +242,11 @@ data("weather_data")
 
       #Plot of granular continuous variable (very small values)
       else if(type == 2){
-        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2)) +
+        ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2,)) +
           geom_point() +
           scale_color_gradientn(colors = rainbow(10)) +
           labs(x = "Longitude", y = "Latitude",
-               color = Title)
+               color = Title, size = size_name)
       }
     }
 

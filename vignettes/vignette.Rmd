@@ -16,6 +16,13 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(climate)
+library(dplyr)
+library(maps)
+library(fields)
+library(sf)
+library(sp)
+library(ggplot2)
+library(GpGp)
 ```
 
 

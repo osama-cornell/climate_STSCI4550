@@ -2,8 +2,8 @@ Package: climate
 Type: Package
 Title: Analysis of Weather Data
 Version: 0.1.0
-Author@R: c(person("Osama", "Awadalla", email = "oa228@cornell.edu", role = c("aut", "cre")),
-  person("Catherine", "Zhang", email = "cz456@cornell.edu", role = c("aut", "cre")))
+Author: Osama Awadalla <oa228@cornell.edu>, Catherine Zhang <cz456@cornell.edu>
+Maintainer: Osama Awadalla <oa228@cornell.edu>
 Description: This package has two dataset regarding weather data. 
   We take this data and analyze it making forecasts.
 License: GPL-2
@@ -14,10 +14,14 @@ Imports:
   dplyr,
   maps,
   fields,
-  sf
+  sf,
+  sp,
+  ggplot2,
+  GpGp
 Suggests:
-  markdown,
-  knitr,
-  testthat (>= 3.0.0)
-  Config/testthat/edition: 3
+    markdown,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
+Config/testthat/edition: 3
