@@ -140,14 +140,14 @@ yearly_trend <- function(station_id,type = "T_DAILY_AVG"){
 grid_points <- function(resolution = 0.1) {
   #Get map of continuous
   map <- ggplot2::map_data("usa")
-  map <- filter(map, region == "main")
+  map <- dplyr::filter(map, region == "main")
   #Make points depending on resolution
   x.points <- seq(min(map$long), max(map$long), by = resolution)
   y.points <- seq(min(map$lat), max(map$lat), by = resolution)
   #Create grid
   grid <- expand.grid(x.points,y.points)
   #Make it inside polygon
-  inside <- point.in.polygon(grid$Var1, grid$Var2, map$long, map$lat)
+  inside <- sp::point.in.polygon(grid$Var1, grid$Var2, map$long, map$lat)
   inside.logical <- ifelse(inside, TRUE, FALSE)
   return(grid[inside.logical, ])
 }
@@ -189,7 +189,7 @@ grid_points <- function(resolution = 0.1) {
 station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
   #Select specific columns and clean data
   full <- df %>%
-    select(all_of(param), LONGITUDE, LATITUDE)
+    select(param, LONGITUDE, LATITUDE)
   clean_df <- na.omit(full)
   df <- as.data.frame(clean_df)
   colnames(grid_points) <- c("LONGITUDE", "LATITUDE")
@@ -230,22 +230,22 @@ station_grid_points <- function(df, grid_points, param = "T_DAILY_AVG") {
 #' @return A plot of spatial data
 #'
 #' @examples
+#' new_df <- dplyr::filter(weather_data, LONGITUDE > -130)
+#' new_df <- dplyr::filter(new_df, LONGITUDE < 0)
+#' stations <- unique(new_df$WBANNO)
 #' df <- data.frame(station = c(),trend = c(),p_value = c(), se = c())
 #' #Making a data frame for trend estimates of each station
 #' for(station in stations){
-#' new_df <- weather_data %>% filter(WBANNO == station)
+#' new_df <- dplyr::filter(weather_data, WBANNO == station)
 #' LONGITUDE <- unique(new_df$LONGITUDE)
 #' LATITUDE <- unique(new_df$LATITUDE)
 #' df <- rbind(df,c(station,LONGITUDE,LATITUDE,
 #'                  yearly_trend(station_id = station)))
-#' }
-#' colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
-#' #Plotting trend estimates
-#' plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
-#' Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
-#' new_df <- weather_data %>% filter(LONGITUDE > -130) %>% filter(LONGITUDE < 0)
-#' stations <- unique(new_df$WBANNO)
-#'
+#'}
+#'colnames(df) <- c("station","LONGITUDE","LATITUDE","trend", "pvalue","se")
+#'#Plotting trend estimates
+#'plot_interpolations(df = df, col1 = df$trend, type = 3,col2 = df$pvalue,
+#'Title = "Trend", size_name = "p_value", Big_Title = "Temperature Trend")
 #'
 #' @export
 plot_interpolations <- function(df,col1,type = 1,col2 = NULL,
@@ -254,35 +254,35 @@ plot_interpolations <- function(df,col1,type = 1,col2 = NULL,
   #Plot of continuous variable, simple with no background,
   #used for interpolations
   if(type == 1){
-    ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
-      geom_point() +
-      scale_color_gradient(low = "lightblue", high = "darkred") +
-      labs(title = Big_Title,x = "Longitude", y = "Latitude",
+    ggplot2::ggplot(df,ggplot2::aes(x = LONGITUDE, y = LATITUDE, color = col1)) +
+      ggplot2::geom_point() +
+      ggplot2::scale_color_gradient(low = "lightblue", high = "darkred") +
+      ggplot2::labs(title = Big_Title,x = "Longitude", y = "Latitude",
            color = Title)
   }
 
   #Plot of granular continuous variable (very small values)
   else if(type == 2){
-    ggplot2::ggplot(df,aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2,)) +
-      geom_point() +
-      scale_color_gradientn(colors = rainbow(10)) +
-      labs(title = Big_Title, x = "Longitude", y = "Latitude",
+    ggplot2::ggplot(df,ggplot2::aes(x = LONGITUDE, y = LATITUDE, color = col1, size = col2,)) +
+      ggplot2::geom_point() +
+      ggplot2::scale_color_gradientn(colors = rainbow(10)) +
+      ggplot2::labs(title = Big_Title, x = "Longitude", y = "Latitude",
            color = Title, size = size_name)
   }
 
   #Plot of continuous variable, simple with background,
   #used individuals stations
   else if(type == 3){
-  usa_map <- map_data("usa")
-  ggplot2::ggplot() +
-    geom_polygon(data = usa_map, aes(x = long, y = lat, group = group),
-                 fill = "gray", color = "gray", linewidth = 0.25) +
-    geom_point(data = df, aes(x = LONGITUDE, y = LATITUDE,
-                                      color = col1), size = 3) +
-    scale_color_gradient(low = "#ffeda0", high = "#f03b20") +
-    labs(title = Big_Title,
-         x = "Longitude", y = "Latitude",
-         color = Title) +
-    theme_minimal()
+    usa_map <- map_data("usa")
+    ggplot2::ggplot() +
+      ggplot2::geom_polygon(data = usa_map, aes(x = long, y = lat, group = group),
+                   fill = "gray", color = "gray", linewidth = 0.25) +
+      ggplot2::geom_point(data = df, aes(x = LONGITUDE, y = LATITUDE,
+                                color = col1), size = 3) +
+      ggplot2::scale_color_gradient(low = "#ffeda0", high = "#f03b20") +
+      ggplot2::labs(title = Big_Title,
+           x = "Longitude", y = "Latitude",
+           color = Title) +
+      ggplot2::theme_minimal()
   }
 }
